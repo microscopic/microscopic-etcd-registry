@@ -1,0 +1,12 @@
+version: "2"
+services:
+  microscopic-etcd-registry:
+    build:
+      context: ../../
+      dockerfile: test/env/Dockerfile
+    links:
+      - etcd
+  etcd:
+    image: elcolio/etcd
+    expose:
+      - "2379"
