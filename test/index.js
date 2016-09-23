@@ -11,9 +11,15 @@ describe('ETCD Registry', () => {
   afterEach((done) => {
     const etcd = new Etcd('http://etcd:2379')
 
-    etcd.get('services', (err, services) => {
+    etcd.get('services', (error, services) => {
+      if (error) {
+        throw error
+      }
+
       if (services) {
-        etcd.del('services', { recursive: true }, done)
+        etcd.del('services', { recursive: true }, () => {
+          etcd.del('services-options', { recursive: true }, done)
+        })
       } else {
         done()
       }
@@ -50,8 +56,6 @@ describe('ETCD Registry', () => {
 
       expect(node.name).to.be.equal('test')
       expect(node.connection.address).to.be.equal('test')
-      expect(node.options.a).to.be.equal(1)
-      expect(node.options.b).to.be.equal(2)
     })
 
     it('should register service and synchronize between all clients', () => {
@@ -68,8 +72,6 @@ describe('ETCD Registry', () => {
 
       expect(node.name).to.be.equal('test')
       expect(node.connection.address).to.be.equal('test')
-      expect(node.options.a).to.be.equal(1)
-      expect(node.options.b).to.be.equal(2)
     })
 
     it('should register service with TTL', (done) => {
@@ -86,18 +88,24 @@ describe('ETCD Registry', () => {
     }).timeout(30 * 1000)
   })
 
-  describe('getServiceNode()', () => {
-    it('should return node of service', () => {
+  describe('getServiceOptions()', () => {
+    it('should return options of service', () => {
       const etcd = new ETCDRegistry('http://etcd:2379')
 
       etcd.register('test', { address: 'test' }, { a: 1, b: 2 })
 
-      const node = etcd.getServiceNode('test')
+      const options = etcd.getServiceOptions('test')
 
-      expect(node.name).to.be.equal('test')
-      expect(node.connection.address).to.be.equal('test')
-      expect(node.options.a).to.be.equal(1)
-      expect(node.options.b).to.be.equal(2)
+      expect(options.a).to.be.equal(1)
+      expect(options.b).to.be.equal(2)
+    })
+
+    it('should return undefined if servicem does not exist', () => {
+      const etcd = new ETCDRegistry('http://etcd:2379')
+
+      const options = etcd.getServiceOptions('test')
+
+      expect(options).to.be.undefined
     })
   })
 
